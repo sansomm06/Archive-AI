@@ -43,10 +43,9 @@ def main():
 
         elif choice == 2:
 
-            # to do 
             print("Edit Clothing Selected")
             print()
-            edit_clothing()
+            edit_clothing(closet)
 
         elif choice == 3:
 
@@ -64,7 +63,7 @@ def main():
 
             print("Search Closet Selected")
             print()
-            search_closet()
+            search_closet(closet)
         elif choice == 6:
 
             print("Save Closet Selected")
@@ -90,6 +89,7 @@ def main():
                     print("ERROR: Invalid Input")
                 elif choice == "Y":
                     save_closet()
+                    break
                 else: 
                     print("Have a Nice Day!")
                     return
@@ -120,7 +120,7 @@ def validate_choice(low, high):
             if low <= choice <= high:
                 return choice
             else: 
-                print("ERROR: Enter a Number 1-9")
+                print("ERROR: Enter a Number 1", high)
                 continue
         except ValueError:
             print("ERROR: Not a Number")
@@ -159,7 +159,7 @@ def add_clothing(closet):
     description = input("Enter a description: ")
     clothing['Description'] = description
     purchase_price = int(input("Enter purchased price ($): "))
-    clothing['Purchasing Price'] = purchase_price
+    clothing['Purchase Price'] = purchase_price
 
     closet[name] = clothing
 
@@ -177,7 +177,80 @@ def example_add_clothing():
         print(f"{key}: {value}")
 
 
-# def edit_clothing():
+def edit_clothing(closet):
+
+    if not closet:
+        print("Closet is Empty")
+        return
+    else: 
+        while True:
+
+            names = list(closet.keys())
+
+            print()
+            for i in range(len(names)):
+                print(f"{i + 1}. {names[i]}")
+            print(f"{len(names) + 1}. Exit")
+            print()
+
+            choice = validate_choice(1, (len(names) + 1))
+
+            if choice == (len(names) + 1):
+                print("Exit Selected")
+                return
+            else:
+                key = names[choice - 1]
+                print(f"{key} Selected")
+                print()
+
+                selected_keys = list(closet[key].keys())
+
+                while True:
+
+                    for i in range(len(selected_keys)):
+                        print(f"{i + 1}. {selected_keys[i]}: {closet[key][selected_keys[i]]}")
+                    print(f"{len(selected_keys) + 1}. Exit")
+                    print()
+                
+                    choice1 = validate_choice(1, (len(selected_keys) + 1))
+                    print(f"{selected_keys[choice1 - 1]} selected")
+                    print()
+
+                    if choice1 == (len(selected_keys) + 1):
+                        print("Exit Selected")
+                        break
+                    else:
+
+                        selected_key1 = selected_keys[choice1 - 1]
+
+                        if selected_key1 == "Year" or selected_key1 =="Purchase Price":
+
+                            while True:
+                                try:
+                                    new_num = int(input("Enter new value: "))
+                                    closet[key][selected_key1] = new_num
+                                    print(f"{selected_key1} updated successfully")
+                                    break
+                                except ValueError:
+                                    print("ERROR: Not a number")
+                        else:
+
+                            choice2 = input("Enter change: ")
+
+                            closet[key][selected_key1] = choice2
+                            print(f"{selected_key1} updated successfully")
+
+                        while True: 
+                            
+                            choice2 = input("Would you like to edit another attribute of this clothing? Y/N: ").upper()
+
+                            if choice2 != "Y" and choice2 !="N":
+                                print("ERROR: Invalid Input")
+                            else:
+                                break
+                        
+                        if choice2 == "N":
+                            break
 
 
 def remove_clothing(closet):
@@ -218,11 +291,72 @@ def view_closet(closet):
 
         for name, values in closet.items():
             print(f"{name}: ")
+            print()
             for key, value in values.items():
                 print(f"{key}: {value}")
+            print()
     
 
-# def search_closet():
+def search_closet(closet):
+
+    if not closet:
+        print("Closet is Empty")
+        return
+    else: 
+
+        while True:
+
+            searchable_list = ["Brand", "Clothing Type", "Year", "Style", "Color", "Size", "Condition"]
+
+            for i in range(len(searchable_list)):
+                print(f"{i + 1}. {searchable_list[i]}")
+            print("8. Exit")
+
+            choice = validate_choice(1, 8)
+
+            if choice == 8:
+                return
+            
+            elif choice == 3:
+
+                try: 
+                    year = int(input("Enter year to search for: "))
+
+                    found_searches = []
+                    
+                    for name, values in closet.items():
+                            if values["Year"] == year:
+                                    found_searches.append(name)
+                    
+                    if not found_searches:
+                        print("No Found Matches")
+                    else: 
+                        print(f"{len(found_searches)} found matches")
+                        for i in range(len(found_searches)):
+                            print(f"{found_searches[i]}, ", end="")
+                        print()
+
+                except ValueError:
+                    print("ERROR: Invalid Input")
+            else: 
+
+                attribute = searchable_list[choice - 1]
+                search = input(f"Enter {attribute} to search for: ")
+
+                found_searches = []
+
+                for name, values in closet.items():
+                    if values[attribute].lower() == search.lower():
+                            found_searches.append(name)
+
+                if not found_searches:
+                    print("No Found Matches")
+                else: 
+                    print(f"{len(found_searches)} found matches")
+                    for i in range(len(found_searches)):
+                        print(f"{found_searches[i]}, ", end="")
+                    print()
+
 
 
 # def save_closet():
