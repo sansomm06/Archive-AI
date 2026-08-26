@@ -1,7 +1,19 @@
 # AI Vintage Clothes Manager
+import os
+import base64
 import json
 from openai import OpenAI
+from pydantic import BaseModel
 
+class ClothingAnalysis(BaseModel):
+    brand: str
+    clothing_type: str
+    estimated_year: str
+    style: str
+    color: str
+    size: str
+    condition: str
+    description: str
 
 
 def main():
@@ -26,10 +38,9 @@ def main():
                     closet = add_clothing(closet)
 
                 elif add_choice == 2:
-                    # add_using_AI
-                    # AI_add_clothing()
-                    print("Feature Coming Soon")
+                    print("Add Clothing Using AI Image Selected")
                     print()
+                    AI_add_clothing(closet, client)
 
                 elif add_choice == 3:
                     print("View an Example Selected")
@@ -85,7 +96,8 @@ def main():
 
                 elif choice == "Y":
                     save_closet(closet)
-                    break
+                    print("Have a Nice Day!")
+                    return
 
                 else: 
                     print("Have a Nice Day!")
@@ -140,7 +152,7 @@ def add_clothing(closet):
     clothing['Brand'] = brand
     clothing_type = input("Enter clothing type: ")
     clothing['Clothing Type'] = clothing_type
-    year = int(input("Enter year/era: "))
+    year = input("Enter year/era: ")
     clothing['Year'] = year
     style = input("Enter Style: ")
     clothing['Style'] = style
@@ -202,22 +214,23 @@ def edit_clothing(closet):
                 while True:
                     for i in range(len(selected_keys)):
                         print(f"{i + 1}. {selected_keys[i]}: {closet[key][selected_keys[i]]}")
+
                     print(f"{len(selected_keys) + 1}. Exit")
                     print()
-                
-                    choice1 = validate_choice(1, (len(selected_keys) + 1))
 
-                    print(f"{selected_keys[choice1 - 1]} selected")
-                    print()
+                    choice1 = validate_choice(1, (len(selected_keys) + 1))
 
                     if choice1 == (len(selected_keys) + 1):
                         print("Exit Selected")
                         break
 
                     else:
+                        print(f"{selected_keys[choice1 - 1]} selected")
+                        print()
+
                         selected_key1 = selected_keys[choice1 - 1]
 
-                        if selected_key1 == "Year" or selected_key1 =="Purchase Price":
+                        if selected_key1 == "Purchase Price":
                             while True:
                                 try:
                                     new_num = int(input("Enter new value: "))
@@ -307,29 +320,6 @@ def search_closet(closet):
 
             if choice == 8:
                 return
-            
-            elif choice == 3:
-                try: 
-                    year = int(input("Enter year to search for: "))
-
-                    found_searches = []
-                    
-                    for name, values in closet.items():
-                            if values["Year"] == year:
-                                    found_searches.append(name)
-                    
-                    if not found_searches:
-                        print("No Found Matches")
-
-                    else: 
-                        print(f"{len(found_searches)} found matches")
-
-                        for i in range(len(found_searches)):
-                            print(f"{found_searches[i]}, ", end="")
-                        print()
-
-                except ValueError:
-                    print("ERROR: Invalid Input")
 
             else: 
                 attribute = searchable_list[choice - 1]
@@ -421,6 +411,122 @@ def AI_resale(clothing, client):
     except Exception as error:
         print("Unable to Generate Listing")
         print(f"ERROR: {error}")
+
+
+def AI_add_clothing(closet, client):
+    image = input("Enter image filepath: ").strip()
+
+    analysis = analyze_image(client, image)
+
+    if analysis is None:
+        return
+
+    clothing = review_ai_item(analysis)
+
+    if clothing is None:
+        return
+
+    item_name = input("\nEnter a name for this closet item: ").strip()
+
+    closet[item_name] = clothing
+
+    print(f"\n{item_name} added successfully.")
+
+
+def analyze_image(client, image_path):
+    extension = os.path.splitext(image_path)[1].lower()
+
+    mime_types = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp"}
+
+    if not os.path.exists(image_path):
+        print("Image file not found.")
+        return None
+
+    if extension not in mime_types:
+        print("Unsupported image format.")
+        return None
+
+    mime_type = mime_types[extension]
+
+    try:
+        with open(image_path, "rb") as image_file:
+            encoded_image = base64.b64encode(
+                image_file.read()
+            ).decode("utf-8")
+
+        response = client.responses.parse(
+            model="gpt-5.6",
+            input=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "input_text",
+                            "text": (
+                                "Analyze this clothing item. "
+                                "If a detail cannot be determined from the image, "
+                                "use Unknown rather than inventing it."
+                            )
+                        },
+                        {
+                            "type": "input_image",
+                            "image_url": (
+                                f"data:{mime_type};base64,{encoded_image}"
+                            )
+                        }
+                    ]
+                }
+            ],
+            text_format=ClothingAnalysis
+        )
+
+        return response.output_parsed
+
+    except Exception as error:
+        print("Unable to analyze image.")
+        print(f"Error: {error}")
+        return None
+
+
+def review_ai_item(analysis):
+    if analysis is None:
+        return None
+
+    clothing = {
+        "Brand": analysis.brand,
+        "Clothing Type": analysis.clothing_type,
+        "Year": analysis.estimated_year,
+        "Style": analysis.style,
+        "Color": analysis.color,
+        "Size": analysis.size,
+        "Condition": analysis.condition,
+        "Description": analysis.description
+    }
+
+    print("\nAI Analysis:")
+    for key, value in clothing.items():
+        print(f"{key}: {value}")
+
+    print("\nEnter corrections.")
+    print("Press Enter to keep the AI-generated value.\n")
+
+    for key in clothing:
+        correction = input(
+            f"{key} [{clothing[key]}]: "
+        ).strip()
+
+        if correction:
+            clothing[key] = correction
+
+    while True:
+        try:
+            purchase_price = int(input("Enter Purchase Price ($): "))
+            clothing["Purchase Price"] = purchase_price
+            break
+        except ValueError:
+            print("ERROR: Not a Number")
+            
+    return clothing
 
 
 main()
