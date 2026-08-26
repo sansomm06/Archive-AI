@@ -1,9 +1,12 @@
 # AI Vintage Clothes Manager
 import json
+from openai import OpenAI
+
 
 
 def main():
     closet = {}
+    client = OpenAI()
 
     while True:
         display_menu()
@@ -71,7 +74,7 @@ def main():
         elif choice == 8:
             print("Generate Resell Listing Selected")
             print()
-            generate_resell()
+            generate_resell(closet, client)
 
         elif choice == 9:
             while True:
@@ -369,10 +372,50 @@ def load_closet():
         return {}
 
 
-def generate_resell():
+def generate_resell(closet, client):
+    if not closet:
+            print("Closet is Empty")
+            return
+        
+    else: 
+        names = list(closet.keys())
+    
+        for i in range(len(names)):
+            print(f"{i + 1}. {names[i]}")
+        print()
+        
+    try: 
+            choice = int(input("Select Clothing to Generate Resale Listing: "))
+    
+            if 1 <= choice < (len(names) + 1):
+                key = names[choice - 1]
+                clothing = closet[key]
 
-    # Needs AI Implementation
-    print("Generate Resell Listing Feature Coming Soon")
+                AI_resale(clothing, client)
+    
+            else:
+                print("ERROR: Not an Option")
+    
+    except ValueError:
+        print("ERROR: Not a Number") 
+
+
+def AI_resale(clothing, client):
+
+    desired_keys = ["Brand", "Clothing Type", "Year", "Style",
+                    "Color", "Size", "Condition", "Description"]
+    clothing_info = ""
+
+    for key in desired_keys:
+        value = clothing[key]
+        clothing_info += f"{key}: {value}\n"
+
+    response = client.responses.create(
+    model = "gpt-5.6",
+    instructions = "Write a marketplace-friendly, concise resale listing for the clothing item provided. Do not invent details that are not included.",
+    input = clothing_info)
+
+    print(response.output_text)
 
 
 main()
