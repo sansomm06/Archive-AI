@@ -383,7 +383,7 @@ def generate_resell(closet, client):
         for i in range(len(names)):
             print(f"{i + 1}. {names[i]}")
         print()
-        
+
     try: 
             choice = int(input("Select Clothing to Generate Resale Listing: "))
     
@@ -410,12 +410,17 @@ def AI_resale(clothing, client):
         value = clothing[key]
         clothing_info += f"{key}: {value}\n"
 
-    response = client.responses.create(
-    model = "gpt-5.6",
-    instructions = "Write a marketplace-friendly, concise resale listing for the clothing item provided. Do not invent details that are not included.",
-    input = clothing_info)
+    try:
+        response = client.responses.create(
+        model = "gpt-5.6",
+        instructions = "Write a marketplace-friendly, concise resale listing for the clothing item provided. Do not invent details that are not included.",
+        input = clothing_info)
 
-    print(response.output_text)
+        print(response.output_text)
+
+    except Exception as error:
+        print("Unable to Generate Listing")
+        print(f"ERROR: {error}")
 
 
 main()
